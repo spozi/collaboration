@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico" />
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" />
+    <title>Job Matcher</title>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <h1>Job-Candidate Matcher</h1>
+
+          <form action="" method="POST">
+            <div class="form-group">
+              <label>Query</label>
+              <input type="text" class="form-control" id="query" name="query" placeholder="Enter job description here" />
+            </div>
+            <br />
+
+            <button id="submit" type="submit" class="btn btn-primary">Search</button>
+          </form>
+
+          <table class="table">
+            <thead>
+              <tr>
+                <th>Candidate</th>
+                <th>Matching Rate</th>
+              </tr>
+            </thead>
+            {% for key, value in result.items() %}
+              <tr>
+                <td> {{ key }} </td>
+                <td> {{ value }}&percnt; </td>
+              </tr>
+            {% endfor %}
+            <tbody id="result"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
