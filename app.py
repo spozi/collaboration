@@ -100,18 +100,33 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 import os
 
+import numpy as np
+
+
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-from models import Result
-
-
+from models import Word2Vec
 
 @app.route('/')
 def hello():
     return "Hello World!"
+
+@app.route('/<word>')
+def word_vec(word):
+    query = ['machine', 'learning', 'classifier']
+    vectors = []
+    for qw in query:
+        res = Word2Vec.query.filter(Word2Vec.word==qw).first()
+        vectors.append(res.vector)
+    
+    qvector = np.mean(vectors, axis=0)  #Average the vector
+    qlist = qvector.tolist()
+
+    return "Hello {}!".format(word)
+
 
 
 @app.route('/<name>')
