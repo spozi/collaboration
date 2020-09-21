@@ -1,7 +1,6 @@
 from app import db
 from sqlalchemy.dialects.postgresql import JSON
 
-
 # class Result(db.Model):
 #     __tablename__ = 'wordcount_dev'
 
@@ -27,12 +26,15 @@ class Word2Vec(db.Model):
 
     def __repr__(self):
         return "<Word2Vec(id='{}', word='{}', vector={})>"\
-                .format(self.id, self.word, self.vector)
+            .format(self.id, self.word, self.vector)
 
-class Collaborator(db.Model):
+class Candidate(db.Model):
+    __tablename__ = "top_authors"
+
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    scopus_id = db.Column(db.String(), unique=True)
+    author_id = db.Column(db.String())
+    vector = db.Column(db.ARRAY(db.REAL))
 
     def __repr__(self):
-        return '<id {}>'.format(self.id)
+        return "<Candidate(id='{}', author_id='{}', vector={})>"\
+            .format(self.id, self.author_id, self.vector)
