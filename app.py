@@ -17,11 +17,13 @@ db = SQLAlchemy(app)
 from models import Word2Vec, Candidate, CandidateInfo
 
 #%% Natural language processing
+import nltk
 from nltk.tokenize import RegexpTokenizer
 from nltk.stem import WordNetLemmatizer 
 from nltk.corpus import stopwords
 from scipy import spatial
 
+nltk.download('stopwords')
 
 lemmatizer = WordNetLemmatizer() 
 tokenizer = RegexpTokenizer(r'\w+')
