@@ -38,3 +38,15 @@ class Candidate(db.Model):
     def __repr__(self):
         return "<Candidate(id='{}', author_id='{}', vector={})>"\
             .format(self.id, self.author_id, self.vector)
+
+class CandidateInfo(db.Model):
+    __tablename__ = "top_authors_info"
+
+    id = db.Column(db.Integer, primary_key=True)
+    author_id = db.Column(db.String())
+    author_name = db.Column(db.String())
+    author_affiliation = db.Column(db.String())
+
+    def __repr__(self):
+        return "<CandidateInfo(id='{}', author_id='{}', author_name='{}', author_affiliation='{}')>"\
+            .format(self.id, self.author_id, self.author_name, self.author_affiliation)
