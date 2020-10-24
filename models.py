@@ -50,3 +50,4 @@ class CandidateInfo(db.Model):
     def __repr__(self):
         return "<CandidateInfo(id='{}', author_id='{}', author_name='{}', author_affiliation='{}')>"\
             .format(self.id, self.author_id, self.author_name, self.author_affiliation)
+
