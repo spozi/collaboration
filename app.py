@@ -31,6 +31,8 @@ tokenizer = RegexpTokenizer(r'\w+')
 stop_words = list(set(stopwords.words('english')))
 stop_words.extend(["et", "al", "de", "fig", "en", "use", "the"])
 
+
+
 def textToListProcessing(text):
     lemma_text = lemmatizer.lemmatize(text) 
     tokens = tokenizer.tokenize(lemma_text.lower())
