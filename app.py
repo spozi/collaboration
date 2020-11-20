@@ -8,9 +8,6 @@ import numpy as np
 from numpy import dot
 from numpy.linalg import norm
 
-import Orange, pickle
-model = pickle.load(open('./assets/mdl_dt_uum.pkcls', 'rb')) 
-
 #%% Flask start
 app = Flask(__name__)
 app.config.from_object(os.environ['APP_SETTINGS'])
@@ -57,6 +54,10 @@ def authorIDtoName(x):
 @app.route('/')
 def hello():
     return "Hello World!"
+
+@app.route('/investhack')
+def matching():
+    return render_template('investhack.html') 
 
 
 
