@@ -1,42 +1,48 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico" />
-    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" />
-    <title>Sintok Analytica</title>
-  </head>
-  <body>
-    <div class="container">
-      <div class="row">
-        <div class="col">
-          <h1>Daily News Stock Matcher</h1>
 
-          <form action="" method="POST">
-            <div class="form-group">
-              <label>Query</label>
-              <input type="text" class="form-control" id="query" name="query" placeholder="Enter brief project description here..." />
-            </div>
+<head>
+  <meta charset="utf-8" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico" />
+  <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" />
+  <title>Sintok Analytica</title>
+</head>
+
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <h1>Daily News Stock Matcher</h1>
+
+        <form action="" method="POST">
+          <div class="form-group">
+            <label>Select Date</label>
+            <input type="date" id="dstock" name="dstock">
             <br />
+            <label>Total Stocks (1 to 10)</label>
+            <input type="number" id="quantity" name="quantity" min="1" max="10">
+            <br />
+            <input type="checkbox" id="shariah" name="shariah">
+            <label>Show Shariah Compliant Equities Only</label>
+          </div>
+          <button id="submit" type="submit" class="btn btn-primary">Search</button>
+        </form>
 
-            <button id="submit" type="submit" class="btn btn-primary">Search</button>
-          </form>
-
-          <table class="table">
-            <thead>
-              <tr>
-                <th>Popular Stocks</th>
-                <th>Risk</th>
-                <th>Position</th>
-              </tr>
-            </thead>
-            {% for key, value in result.items() %}
-              <tr>
-                <td> {{ key }} </td>
-                <td> {{ value }}&percnt; </td>
-              </tr>
-            {% endfor %}
-            <tbody id="result"></tbody>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Popular Stocks</th>
+              <th>Close Price</th>
+              <!-- <th>Position</th> -->
+            </tr>
+          </thead>
+          {% for row in result %}
+          <tr>
+            <td> {{ row[0] }} </td>
+            <td> {{ row[1] }} </td>
+          </tr>
+          {% endfor %}
+          <tbody id="result"></tbody>
           </table>
         </div>
       </div>
