@@ -31,21 +31,24 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Popular Stocks</th>
-              <th>Close Price</th>
+              <th>Stock</th>
+              <th>Weekly Return</th>
+              <th>Volatility</th>
               <!-- <th>Position</th> -->
             </tr>
           </thead>
           {% for row in result %}
           <tr>
-            <td> {{ row[0] }} </td>
-            <td> {{ row[1] }} </td>
+              <td> {{ row[0] }}</td>
+              <td> {{ row[1] }}</td>
+              <td> {{ row[3] }}</td>
           </tr>
           {% endfor %}
           <tbody id="result"></tbody>
-          </table>
-        </div>
+        </table>
       </div>
     </div>
-  </body>
+  </div>
+</body>
+
 </html>
