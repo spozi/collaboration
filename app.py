@@ -14,13 +14,13 @@ from collections import defaultdict
 #1. Load stocks description and prices
 stock_df =  pd.read_pickle("./assets/stocks_v1.pkl")
 
-#3. Load stock news
+#2. Load stock news
 stock_news_df = pd.read_excel('./assets/Malaysia_Stock_2020_Sample.xlsx', index_col=None, sheet_name='edgemarket_news')
 
 #%% Text similarity model
 
 
-#4. Load wordvec
+#3. Load wordvec
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -32,14 +32,6 @@ _ = glove2word2vec(glove_file, tmp_file)
 
 model = KeyedVectors.load_word2vec_format(tmp_file)
 
-
-# Put temporary here
-# stock_results = {}
-# for index, row in stock_df.iterrows():
-#     stock_name = row['stock']
-#     stock_history = row['history']
-#     stock_last_price = stock_history['Close'][-1]
-#     # stock_results[stock_name] = stock_last_price
 
 #%% Flask start
 app = Flask(__name__)
@@ -93,36 +85,6 @@ def tokens_to_vectors(x):
     qlist = qvector.tolist()
     return qlist
 
-# #1. Get the most popular stocks based on news
-# #1a. Get the news 
-# selected_news_df = stock_news_df[stock_news_df['date'].dt.date == datetime.datetime.strptime('2020-01-03','%Y-%m-%d').date()]
-# selected_news_df['lemma_title'] = selected_news_df['title'].apply(textToListProcessing)
-# selected_news_df['lemma_content'] = selected_news_df['content'].apply(textToListProcessing)
-
-# #1b. Get the stock description
-# stock_df['lemma_description'] = stock_df['description'].apply(textToListProcessing)
-
-
-# #1c. Perform matching
-# #Get vector of stock description
-# stock_df['vector_lemma_description'] = stock_df['lemma_description'].apply(tokens_to_vectors)
-
-# #Get vector of news content
-# selected_news_df['vector_lemma_content'] = selected_news_df['lemma_content'].apply(tokens_to_vectors)
-# news_title = selected_news_df['title'].tolist()
-# news_content_vector = selected_news_df['vector_lemma_content'].tolist()
-
-
-# #Measure the similarity between news and stock description
-# popular_stock = []
-# for indexX, stock in stock_df.iterrows():
-#     for indexY, news in selected_news_df.iterrows():
-#         #Compute cosine similarity
-#         similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content']))
-#         popular_stock.append((stock['stock'], news['title'], similarity))
-
-
-
 #%% Flask begin
 @app.route('/')
 def hello():
@@ -141,7 +103,7 @@ def matching():
             selected_stock_df = stock_df
 
         quantity_stock = int(request.form["quantity"])  #How many stocks are we going to display?
-        threshold = 0.8
+        threshold = 0.8                                 #This threshold can be changed to increase the specificity or sensitivity
 
         #1. Get the most popular stocks based on news
         #1a. Get the news 
@@ -157,10 +119,10 @@ def matching():
         selected_stock_df['vector_lemma_description'] = selected_stock_df['lemma_description'].apply(tokens_to_vectors)
 
         #Get vector of news content
+        selected_news_df['vector_lemma_title'] = selected_news_df['lemma_title'].apply(tokens_to_vectors)
         selected_news_df['vector_lemma_content'] = selected_news_df['lemma_content'].apply(tokens_to_vectors)
         # news_title = selected_news_df['title'].tolist()
         # news_content_vector = selected_news_df['vector_lemma_content'].tolist()
-
 
         #Measure the similarity between news and stock description
         popular_stock = []
@@ -169,6 +131,9 @@ def matching():
                 #Compute cosine similarity
                 similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content'])
                 popular_stock.append((stock['stock'], news['title'], similarity))
+
+        #Sort based on similarity descending order
+        popular_stock.sort(key=lambda tup: tup[2], reverse=True)
 
         #3. Remove least popular best stock for trading
         very_popular_stock = []
@@ -188,78 +153,45 @@ def matching():
 
         agg_popular_stock_list = [(k, v) for k, v in agg_popular_stock.items()] 
 
-        #5. Sort based on popularity
+        #5. Sort Based on Popularity
         agg_popular_stock_list = sorted(agg_popular_stock_list, key=lambda x: x[1], reverse=True)
         agg_popular_stock_list = agg_popular_stock_list[:quantity_stock]
 
+        #6. Technical Analysis
+        results = []
+        for stock_name, assoc_rate in agg_popular_stock_list:
+            daily_return = 0
+            weekly_return = 0
+            volatility = 0
 
+            #a. Get the stock from selected_stock_df
+            for index, row in selected_stock_df.iterrows():
+                if row['stock'] == stock_name:
+                    stock_price_df = row['history']
+                    stock_price_df = stock_price_df.shift(-1, freq='D')
 
+                    # stock_price_sr = stock_df.iloc[0]
+                    # stock_price_df = stock_price_sr['history']
+                    stock_price_df['daily_return'] = stock_price_df['Close'].pct_change()
 
-        #6. Perform financial analysis on that stock
+                    stock_price_df['weekly_return'] = ''
+                    for k in range(len(stock_price_df.index)):
+                        if (k!=0) & (k%5==0):
+                            stock_price_df['weekly_return'] =(stock_price_df['Close']-stock_price_df['Close'].shift(-4))/stock_price_df['Close'].shift(-4)
 
+                    daily_return = stock_price_df['daily_return'][date_stock]
+                    weekly_return = stock_price_df['weekly_return'][date_stock]
 
-
-        # stock_results = []
-        # for index, row in stock_df.iterrows():
-        #     stock_name = row['stock']
-        #     stock_description = row['description']
-        #     # stock_history = row['history']
-            
-        #     stock_news = selected_news_list[index]
-
-        #     #Need to check date here as date might not available
-        #     # stock_close_price = stock_history['Close'][date_stock]
-        #     stock_results.append((date_stock,stock_name, stock_description, stock_news))
-        #     if(len(stock_results) > int(quantity_stock)):
-        #         stock_results = stock_results[:-1]
-        #         break
-        #3. Select stock
-        # print(stock_results)
-
-        #3. Output the stock
-        return render_template('investhack.html', result = agg_popular_stock_list) 
+                    #b. Get the news from selected_stock_df
+                    news_title = ""
+                    for stk in very_popular_stock:
+                        if stk[0] == stock_name:
+                            news_title += "<p>" + stk[1] + "</p>"          
+                    results.append((stock_name, news_title, assoc_rate, round(daily_return,4), round(weekly_return,4), round(volatility,4)))
+                    break
+           
+        return render_template('investhack.html', result = results) 
     return render_template('investhack.html') 
-
-
-
-# @app.route('/search', methods=['GET', 'POST'])
-# def word_vec():
-#     if request.method == "POST":
-#         query = request.form["query"]
-
-#         #1. Vectorizing query
-#         tokens = textToListProcessing(query)
-#         vectors = []
-#         for token in tokens:
-#             res = Word2Vec.query.filter(Word2Vec.word==token).first()
-#             vectors.append(res.vector)
-
-#         qvector = np.mean(vectors, axis=0)  #Average the vector
-#         qlist = qvector.tolist()
-
-#         #2. Get a list of authors to measure the similarity (from postgresql)
-#         aid_res = Candidate.query.all()
-#         author_list = []
-#         for aid in aid_res:
-#             author_list.append((aid.id, aid.author_id, aid.vector)) 
-
-#         #Convert list to dataframe
-#         df = pd.DataFrame(author_list, columns=['id', 'author_id', 'vector'])
-#         df['cos_sim'] = df.drop(columns=['id', 'author_id']).apply(compute_cossim_percent, axis=1, args=[qlist])
-#         df2 = df.sort_values(by=['cos_sim'], ascending=False).drop_duplicates('author_id').sort_index()
-#         df2.drop(columns=['id', 'vector'], inplace=True)
-#         df2 = df2.sort_values(by=['cos_sim'], ascending=False)
-
-#         #Replace author_id to name
-#         df2['author_name'] = df2['author_id'].apply(authorIDtoName) 
-
-#         #3. Visualize
-#         #Transform dataframe to dictionary
-#         result = df2.set_index('author_name').to_dict()['cos_sim']
-
-#         #Return to html
-#         return render_template('index.html', result = result) 
-#     return render_template('index.html', result = {})
 
 if __name__ == '__main__':
     app.run()

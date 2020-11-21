@@ -36,14 +36,21 @@
           <thead>
             <tr>
               <th>Stock</th>
+              <th>Associated News</th>
               <th>Associative Rate</th>
-              <!-- <th>Position</th> -->
+              <th>Daily Return</th>
+              <th>Weekly Return</th>
             </tr>
           </thead>
           {% for row in result %}
           <tr>
-              <td> {{ row[0] }}</td>
-              <td> {{ row[1] }}</td>
+              <td style="vertical-align:center"> {{ row[0] }}</td>
+              <td style="vertical-align:center">
+                  {{ row[1]|safe }}
+              </td>
+              <td style="vertical-align:center"> {{ row[2] }}</td>
+              <td style="vertical-align:center"> {{ row[3] }}</td>
+              <td style="vertical-align:center"> {{ row[4] }}</td>
           </tr>
           {% endfor %}
           <tbody id="result"></tbody>
