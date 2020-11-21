@@ -40,10 +40,6 @@ print(os.environ['APP_SETTINGS'])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# from models import Word2Vec, Candidate, CandidateInfo
-
-
-
 #%% Natural language processing
 import nltk
 from nltk.tokenize import RegexpTokenizer
@@ -103,7 +99,7 @@ def matching():
             selected_stock_df = stock_df
 
         quantity_stock = int(request.form["quantity"])  #How many stocks are we going to display?
-        threshold = 0.8                                 #This threshold can be changed to increase the specificity or sensitivity
+        threshold = 0.85                               #This threshold can be changed to increase the specificity or sensitivity
 
         #1. Get the most popular stocks based on news
         #1a. Get the news 
@@ -160,6 +156,7 @@ def matching():
         #6. Technical Analysis
         results = []
         for stock_name, assoc_rate in agg_popular_stock_list:
+            daily_price = 0
             daily_return = 0
             weekly_return = 0
             volatility = 0
@@ -178,7 +175,7 @@ def matching():
                     for k in range(len(stock_price_df.index)):
                         if (k!=0) & (k%5==0):
                             stock_price_df['weekly_return'] =(stock_price_df['Close']-stock_price_df['Close'].shift(-4))/stock_price_df['Close'].shift(-4)
-
+                    daily_price = stock_price_df['Close'][date_stock]
                     daily_return = stock_price_df['daily_return'][date_stock]
                     weekly_return = stock_price_df['weekly_return'][date_stock]
 
@@ -187,7 +184,7 @@ def matching():
                     for stk in very_popular_stock:
                         if stk[0] == stock_name:
                             news_title += "<p>" + stk[1] + "</p>"          
-                    results.append((stock_name, news_title, assoc_rate, round(daily_return,4), round(weekly_return,4), round(volatility,4)))
+                    results.append((stock_name, news_title, assoc_rate, round(daily_price,4), round(weekly_return,4), round(volatility,4)))
                     break
            
         return render_template('investhack.html', result = results) 
@@ -195,4 +192,3 @@ def matching():
 
 if __name__ == '__main__':
     app.run()
-# %%
