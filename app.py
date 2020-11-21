@@ -8,18 +8,19 @@ import datetime
 import numpy as np
 from numpy import dot
 from numpy.linalg import norm
-
+from collections import defaultdict
 
 #Load the dataset
 #1. Load stocks description and prices
-stock_df =  pd.read_pickle("./assets/stocks.pkl")
+stock_df =  pd.read_pickle("./assets/stocks_v1.pkl")
 
-#2. Load stock news
+#3. Load stock news
 stock_news_df = pd.read_excel('./assets/Malaysia_Stock_2020_Sample.xlsx', index_col=None, sheet_name='edgemarket_news')
 
+#%% Text similarity model
 
 
-#3. Load wordvec
+#4. Load wordvec
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.models import KeyedVectors
 from gensim.scripts.glove2word2vec import glove2word2vec
@@ -85,40 +86,40 @@ def tokens_to_vectors(x):
     vectors = []
     for token in x:
         if token in model.wv:
-            res = model.wv[token]
+            res = model[token]
             vectors.append(res)
 
     qvector = np.mean(vectors, axis=0)  #Average the vector
     qlist = qvector.tolist()
     return qlist
 
-#1. Get the most popular stocks based on news
-#1a. Get the news 
-selected_news_df = stock_news_df[stock_news_df['date'].dt.date == datetime.datetime.strptime('2020-01-03','%Y-%m-%d').date()]
-selected_news_df['lemma_title'] = selected_news_df['title'].apply(textToListProcessing)
-selected_news_df['lemma_content'] = selected_news_df['content'].apply(textToListProcessing)
+# #1. Get the most popular stocks based on news
+# #1a. Get the news 
+# selected_news_df = stock_news_df[stock_news_df['date'].dt.date == datetime.datetime.strptime('2020-01-03','%Y-%m-%d').date()]
+# selected_news_df['lemma_title'] = selected_news_df['title'].apply(textToListProcessing)
+# selected_news_df['lemma_content'] = selected_news_df['content'].apply(textToListProcessing)
 
-#1b. Get the stock description
-stock_df['lemma_description'] = stock_df['description'].apply(textToListProcessing)
-
-
-#1c. Perform matching
-#Get vector of stock description
-stock_df['vector_lemma_description'] = stock_df['lemma_description'].apply(tokens_to_vectors)
-
-#Get vector of news content
-selected_news_df['vector_lemma_content'] = selected_news_df['lemma_content'].apply(tokens_to_vectors)
-news_title = selected_news_df['title'].tolist()
-news_content_vector = selected_news_df['vector_lemma_content'].tolist()
+# #1b. Get the stock description
+# stock_df['lemma_description'] = stock_df['description'].apply(textToListProcessing)
 
 
-#Measure the similarity between news and stock description
-popular_stock = []
-for indexX, stock in stock_df.iterrows():
-    for indexY, news in selected_news_df.iterrows():
-        #Compute cosine similarity
-        similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content']))
-        popular_stock.append((stock['stock'], news['title'], similarity))
+# #1c. Perform matching
+# #Get vector of stock description
+# stock_df['vector_lemma_description'] = stock_df['lemma_description'].apply(tokens_to_vectors)
+
+# #Get vector of news content
+# selected_news_df['vector_lemma_content'] = selected_news_df['lemma_content'].apply(tokens_to_vectors)
+# news_title = selected_news_df['title'].tolist()
+# news_content_vector = selected_news_df['vector_lemma_content'].tolist()
+
+
+# #Measure the similarity between news and stock description
+# popular_stock = []
+# for indexX, stock in stock_df.iterrows():
+#     for indexY, news in selected_news_df.iterrows():
+#         #Compute cosine similarity
+#         similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content']))
+#         popular_stock.append((stock['stock'], news['title'], similarity))
 
 
 
@@ -130,9 +131,17 @@ def hello():
 @app.route('/investhack' , methods=['GET', 'POST'])
 def matching():
     if request.method == "POST":
-        date_stock = request.form["dstock"]
-        quantity_stock = request.form["quantity"]
-        shariah_stock = request.form["shariah"]
+        date_stock = request.form["dstock"]             #The required date to search matching stock with news at date
+        
+        shariah_stock = request.form["shariah"]         #Are we going to show only syariah compliance stock?
+        selected_stock_df = {}
+        if shariah_stock == 'yes':
+            selected_stock_df = stock_df[stock_df['shariah'] == 'yes']
+        else:
+            selected_stock_df = stock_df
+
+        quantity_stock = int(request.form["quantity"])  #How many stocks are we going to display?
+        threshold = 0.8
 
         #1. Get the most popular stocks based on news
         #1a. Get the news 
@@ -141,57 +150,74 @@ def matching():
         selected_news_df['lemma_content'] = selected_news_df['content'].apply(textToListProcessing)
 
         #1b. Get the stock description
-        stock_df['lemma_description'] = stock_df['description'].apply(textToListProcessing)
-
+        selected_stock_df['lemma_description'] = selected_stock_df['description'].apply(textToListProcessing)
 
         #1c. Perform matching
         #Get vector of stock description
-        stock_df['vector_lemma_description'] = stock_df['lemma_description'].apply(tokens_to_vectors)
+        selected_stock_df['vector_lemma_description'] = selected_stock_df['lemma_description'].apply(tokens_to_vectors)
 
         #Get vector of news content
         selected_news_df['vector_lemma_content'] = selected_news_df['lemma_content'].apply(tokens_to_vectors)
-        news_title = selected_news_df['title'].tolist()
-        news_content_vector = selected_news_df['vector_lemma_content'].tolist()
+        # news_title = selected_news_df['title'].tolist()
+        # news_content_vector = selected_news_df['vector_lemma_content'].tolist()
 
 
         #Measure the similarity between news and stock description
         popular_stock = []
-        for indexX, stock in stock_df.iterrows():
+        for indexX, stock in selected_stock_df.iterrows():
             for indexY, news in selected_news_df.iterrows():
                 #Compute cosine similarity
-                similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content']))
+                similarity = compute_cossim_percent(stock['vector_lemma_description'], news['vector_lemma_content'])
                 popular_stock.append((stock['stock'], news['title'], similarity))
 
-        #2. Perform financial analysis on that stock
+        #3. Remove least popular best stock for trading
+        very_popular_stock = []
+        for stock in popular_stock:
+            if stock[2] >= threshold:
+                very_popular_stock.append(stock)
+        
+        #4. Aggregate the popular stock, and convert it into associative rate
+        agg_popular_stock = defaultdict(int)
+        total_assoc = 0
+        for stock in very_popular_stock:
+            total_assoc += 1
+            agg_popular_stock[stock[0]] += 1        #Count how many time the name of the stock occur (stock[0] is the name of the stock)
 
-        #3. Output the best stock for trading
-        #1. Filter Shariah Stock
+        for key, val in agg_popular_stock.items():
+            agg_popular_stock[key] = round(float(val/total_assoc), 2)
+
+        agg_popular_stock_list = [(k, v) for k, v in agg_popular_stock.items()] 
+
+        #5. Sort based on popularity
+        agg_popular_stock_list = sorted(agg_popular_stock_list, key=lambda x: x[1], reverse=True)
+        agg_popular_stock_list = agg_popular_stock_list[:quantity_stock]
 
 
 
-        #2. Match the news with given stock with frequency
+
+        #6. Perform financial analysis on that stock
 
 
-        #2. Display stock and its last price
-        stock_results = []
-        for index, row in stock_df.iterrows():
-            stock_name = row['stock']
-            stock_description = row['description']
-            # stock_history = row['history']
+
+        # stock_results = []
+        # for index, row in stock_df.iterrows():
+        #     stock_name = row['stock']
+        #     stock_description = row['description']
+        #     # stock_history = row['history']
             
-            stock_news = selected_news_list[index]
+        #     stock_news = selected_news_list[index]
 
-            #Need to check date here as date might not available
-            # stock_close_price = stock_history['Close'][date_stock]
-            stock_results.append((date_stock,stock_name, stock_description, stock_news))
-            if(len(stock_results) > int(quantity_stock)):
-                stock_results = stock_results[:-1]
-                break
+        #     #Need to check date here as date might not available
+        #     # stock_close_price = stock_history['Close'][date_stock]
+        #     stock_results.append((date_stock,stock_name, stock_description, stock_news))
+        #     if(len(stock_results) > int(quantity_stock)):
+        #         stock_results = stock_results[:-1]
+        #         break
         #3. Select stock
         # print(stock_results)
 
         #3. Output the stock
-        return render_template('investhack.html', result = stock_results) 
+        return render_template('investhack.html', result = agg_popular_stock_list) 
     return render_template('investhack.html') 
 
 
