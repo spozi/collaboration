@@ -8,9 +8,6 @@ from ast import literal_eval
 df = pd.read_csv("../assets/author_dataset_1000_uum.csv")
 cols = [i for i in range(1,301)]
 
-# df['vector'] = 
-
-
 
 
 # %%
