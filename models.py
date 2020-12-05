@@ -39,6 +39,21 @@ class Word2Vec(db.Model):
 #         return "<Candidate(id='{}', author_id='{}', vector={})>"\
 #             .format(self.id, self.author_id, self.vector)
 
+class Candidate(db.Model):
+    __tablename__ = "malaysia_author_2018"
+
+    id = db.Column(db.Integer, primary_key=True)
+    author_ids = db.Column(db.String())
+    author_names = db.Column(db.String())
+    affilname = db.Column(db.String())
+    afid = db.Column(db.Integer)
+    description_vector = db.Column(db.ARRAY(db.Float))
+
+    def __repr__(self):
+        return "<Candidate(id='{}', author_ids='{}', author_names='{}', affilname='{}', afid='{}', description_vector={})>"\
+            .format(self.id, self.author_ids, self.author_names, self.affilname, self.afid, self.description_vector)
+
+
 class CandidateInfo(db.Model):
     __tablename__ = "top_authors_info"
 
@@ -51,15 +66,3 @@ class CandidateInfo(db.Model):
         return "<CandidateInfo(id='{}', author_id='{}', author_name='{}', author_affiliation='{}')>"\
             .format(self.id, self.author_id, self.author_name, self.author_affiliation)
 
-class Candidate(db.Model):
-    __tablename__ = "malaysia_author_2018"
-
-    id = db.Column(db.Integer, primary_key=True)
-    author_ids = db.Column(db.String())
-    author_names = db.Column(db.String())
-    affilname = db.Column(db.String())
-    description_vector = db.Column(db.ARRAY(db.Float))
-
-    def __repr__(self):
-        return "<Candidate(id='{}', author_ids='{}', author_names='{}', author_names='{}', description_vector={})>"\
-            .format(self.id, self.author_ids, self.author_names, self.affilname, self.description_vector)

@@ -9,7 +9,6 @@
   -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Pacifico" />
   <link href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" />
-  {{result[1]|safe}}
   <title>Research Collaboration Finder</title>
 </head>
 
@@ -26,7 +25,13 @@
               placeholder="Enter brief project description here..." />
           </div>
           <br />
-
+          <label for="university">Select University</label>
+          <select name="university" id="university">
+            <option value="uum">Universiti Utara Malaysia</option>
+            <option value="upm">Universiti Putra Malaysia</option>
+            <option value="ukm">Universiti Kebangsaan Malaysia</option>
+            <option value="um">Universiti Malaya</option>
+          </select>
           <button id="submit" type="submit" class="btn btn-primary">Search</button>
         </form>
 
@@ -37,17 +42,10 @@
               <th>Compatibility Rate</th>
             </tr>
           </thead>
-          {% for person in result[0] %}
+          {% for person in result %}
           <tr>
             <td> {{ person[0] }} </td>
             <td> {{ person[1] }}&percnt; </td>
-          </tr>
-          <tr>
-            <td colspan="2">
-              <div class="embed-wrapper">
-                {{result[2]|safe}}
-              </div>
-            </td>
           </tr>
           {% endfor %}
           <tbody id="result"></tbody>

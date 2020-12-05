@@ -44,7 +44,7 @@ def textToListProcessing(text):
     return tokens
 
 def compute_cossim_percent(x, y):
-    arrX = np.array(x.tolist())
+    arrX = np.array(x)
     arrY = y
     cos_sim = 1 - spatial.distance.cosine(arrX, arrY)
     return round(cos_sim*100,2)
@@ -112,7 +112,26 @@ script, div = components(p)
 
 
 
+#%% Universities references
+univ_ref = {}
+univ_ref['uum'] = [60002763,121435310,117453407,114230258,60001278,121111740,112654989,116435042]
+univ_ref['upm'] = [
+    60025577,60001821,60016775,114911671,60024451,106087648,115897289,60004351,106249378,60009491,
+    60017880,60025530,106609727,112862476, 116759695, 107971123, 60001508, 60021145, 116278175, 122287139, 116585446
+]
 
+univ_ref['ukm'] = [60001821,60029395,119043808,110536458,60001508,118113122,112634312,60000968,119051171,109685761,120499389,
+    113909037,107918306,121757963,109661456,113731863,115598983,108244260,107223852,107018029,100740780,106732676,112988341,
+    115144432,119867361,120948207,118449033,60090661
+]
+univ_ref['um'] = [
+    60029157,60002763,60013665,60025577,112612337,112115357,60002512,60021005,60020855,60017880,60001278,113670549,109906464,114359912,
+    117584981,115167301,112203603
+]
+
+#Convert into dictionary of list of int to dictionary of list of str
+# for k, v in univ_ref.items():
+#     univ_ref[k] = list(map(str, v))
 
 #%% Flask begin
 @app.route('/')
@@ -125,6 +144,7 @@ def hello():
 def word_vec():
     if request.method == "POST":
         query = request.form["query"]
+        university = request.form['university']
 
         #1. Vectorizing query
         tokens = textToListProcessing(query)
@@ -136,29 +156,24 @@ def word_vec():
         qvector = np.mean(vectors, axis=0)  #Average the vector
         qlist = qvector.tolist()
 
-        #2. Get a list of authors to measure the similarity (from postgresql)
-        aid_res = Candidate.query.all()
-        author_list = []
-        for aid in aid_res:
-            author_list.append((aid.id, aid.author_id, aid.vector)) 
+        #2. Get a list of authors that belong to that selected university
+        query_sql_statement = Candidate.query.filter(Candidate.afid.in_(univ_ref[university])).statement
+        df_sql = pd.read_sql(query_sql_statement, Candidate.query.session.bind)
 
-        #Convert list to dataframe
-        df = pd.DataFrame(author_list, columns=['id', 'author_id', 'vector'])
-        df['cos_sim'] = df.drop(columns=['id', 'author_id']).apply(compute_cossim_percent, axis=1, args=[qlist])
-        df2 = df.sort_values(by=['cos_sim'], ascending=False).drop_duplicates('author_id').sort_index()
-        df2.drop(columns=['id', 'vector'], inplace=True)
-        df2 = df2.sort_values(by=['cos_sim'], ascending=False)
+        #3. Compute the similarity
+        df_sql['cos_sim'] = df_sql['description_vector'].apply(compute_cossim_percent, args=[qlist])
+        df_sql.sort_values(by=['cos_sim'], ascending=False, inplace=True)
+        df_sql.drop_duplicates(subset=['author_ids'], keep='first', inplace=True)
+        df_sql.dropna(subset=['author_ids'], inplace=True)
 
-        #Replace author_id to name
-        df2['author_name'] = df2['author_id'].apply(authorIDtoName) 
-
-        #3. Visualize
+        print(df_sql.head(10))
+        #4. Visualize
         #Transform dataframe to dictionary to list of tuples
-        result = df2.set_index('author_name').to_dict()['cos_sim']
-        result = list(result.items()) 
-        result = (result,script,div)
+        result = [tuple(r) for r in df_sql[['author_names', 'cos_sim']].values]
+        result = result[:10]
 
-        #Return to html
+
+        #5. Return to html
         return render_template('index.html', result = result) 
     return render_template('index.html', result = {})
 
